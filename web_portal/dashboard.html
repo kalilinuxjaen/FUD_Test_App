@@ -1,0 +1,245 @@
+﻿param(
+    [string]$FolderPath = "C:\Users\LENOVO\Downloads\FUD_Test_App_Full"
+)
+
+Write-Host "`n🔧 FUD Page Auto-Updater is running..."
+Write-Host "Target folder: $FolderPath`n"
+
+if (-not (Test-Path $FolderPath)) {
+    Write-Error "❌ Folder not found: $FolderPath"
+    exit
+}
+
+# 🧩 Sabon dashboard HTML content
+$dashboardHtml = @"
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Dashboard - FUD Test</title>
+<link rel="stylesheet" href="style.css">
+<style>
+body {
+  margin: 0;
+  font-family: "Segoe UI", sans-serif;
+  background: #f6fff9;
+  transition: background 0.3s, color 0.3s;
+}
+.dark-mode {
+  background: #101e14;
+  color: #e8e8e8;
+}
+.sidebar {
+  background: #0A5029;
+  color: white;
+  width: 230px;
+  height: 100vh;
+  position: fixed;
+  padding: 20px;
+  overflow-y: auto;
+}
+.sidebar a {
+  display: block;
+  color: white;
+  text-decoration: none;
+  margin: 10px 0;
+}
+.sidebar a:hover { text-decoration: underline; }
+.main {
+  margin-left: 250px;
+  padding: 20px;
+}
+section {
+  margin-bottom: 25px;
+  padding: 15px;
+  border: 1px solid #0A5029;
+  border-radius: 10px;
+  background: #f5fdf9;
+  transition: background 0.3s;
+}
+.dark-mode section {
+  background: #1a3221;
+  border-color: #0a7a3f;
+}
+input, button {
+  margin: 5px;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px solid #0A5029;
+}
+button {
+  background: #0A5029;
+  color: white;
+  cursor: pointer;
+}
+button:hover { background: #148f43; }
+h3, h2 { color: #0A5029; }
+.dark-mode h3, .dark-mode h2 { color: #7CFFB2; }
+ul { text-align: left; list-style-type: none; padding-left: 0; }
+li { padding: 3px 0; }
+.toggle-dark {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  background: #fff;
+  color: #0A5029;
+  border: none;
+  border-radius: 8px;
+  padding: 5px 12px;
+  cursor: pointer;
+  font-weight: bold;
+}
+.dark-mode .toggle-dark {
+  background: #148f43;
+  color: #fff;
+}
+</style>
+</head>
+<body>
+<div class="sidebar">
+  <h2>FUD Admin</h2>
+  <a href="dashboard.html">🏠 Dashboard</a>
+  <a href="videos.html">🎥 Videos</a>
+  <a href="audios.html">🎵 Audios</a>
+  <a href="images.html">🖼️ Images</a>
+  <a href="links.html">🔗 Links</a>
+  <a href="complaint.html">📩 Complaints</a>
+  <hr>
+  <a href="index.html">🚪 Logout</a>
+</div>
+
+<div class="main">
+  <button class="toggle-dark" id="darkToggle">🌙 Dark Mode</button>
+  <h1>Admin Dashboard</h1>
+  <p>Welcome, Admin Jarry 👋</p>
+
+  <section>
+    <h2>🕒 Test Timer Control</h2>
+    <label>Duration (minutes):</label>
+    <input type="number" id="duration" placeholder="e.g., 30">
+    <br>
+    <button id="startTest">Start Test</button>
+    <button id="endTest">End Test</button>
+    <p id="timerMsg"></p>
+    <h3 id="countdownDisplay"></h3>
+  </section>
+
+  <section>
+    <h2>🎓 Student Control</h2>
+    <input type="text" id="regInput" placeholder="Enter Reg Number (e.g., fcp/cit/23/1150)" style="width:300px">
+    <br>
+    <button id="blockBtn">🟥 Block Student</button>
+    <button id="unblockBtn">🟩 Unblock Student</button>
+    <p id="msg"></p>
+  </section>
+
+  <section class="list-section">
+    <div>
+      <h3>✅ Active Students</h3>
+      <ul id="activeList"></ul>
+    </div>
+    <div>
+      <h3>🚫 Blocked Students</h3>
+      <ul id="blockedList"></ul>
+    </div>
+  </section>
+</div>
+
+<script type="module">
+import { db, ref, update, onValue, set, get } from './firebase-config.js';
+
+const msg = document.getElementById('msg');
+const timerMsg = document.getElementById('timerMsg');
+const countdownDisplay = document.getElementById('countdownDisplay');
+const activeList = document.getElementById('activeList');
+const blockedList = document.getElementById('blockedList');
+const darkToggle = document.getElementById('darkToggle');
+
+// ✅ Dark mode toggle
+darkToggle.addEventListener('click', () => {
+  document.body.classList.toggle('dark-mode');
+  darkToggle.textContent = document.body.classList.contains('dark-mode') ? '☀️ Light Mode' : '🌙 Dark Mode';
+  localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+});
+if (localStorage.getItem('darkMode') === 'true') document.body.classList.add('dark-mode');
+
+// 🔹 Timer controls
+document.getElementById('startTest').addEventListener('click', ()=>{
+  const mins = parseInt(document.getElementById('duration').value);
+  if(!mins || mins <= 0) { timerMsg.innerText = '⚠️ Enter valid duration!'; return; }
+
+  const endTime = Date.now() + (mins * 60 * 1000);
+  set(ref(db, 'test_control'), { active: true, endTime });
+  timerMsg.innerText = `✅ Test started for ${mins} minutes`;
+});
+
+document.getElementById('endTest').addEventListener('click', ()=>{
+  set(ref(db, 'test_control'), { active: false });
+  timerMsg.innerText = '🛑 Test ended manually';
+  countdownDisplay.innerText = '';
+});
+
+// 🔹 Real-time Timer Display
+onValue(ref(db, 'test_control'), snapshot => {
+  const data = snapshot.val();
+  if (!data || !data.active) {
+    countdownDisplay.innerText = '⏸️ Test is not active';
+    return;
+  }
+  const interval = setInterval(()=>{
+    const now = Date.now();
+    const remaining = data.endTime - now;
+    if (remaining <= 0) {
+      clearInterval(interval);
+      countdownDisplay.innerText = '✅ Test Ended!';
+      set(ref(db, 'test_control'), { active: false });
+    } else {
+      const mins = Math.floor(remaining / 60000);
+      const secs = Math.floor((remaining % 60000) / 1000);
+      countdownDisplay.innerText = `⏱️ Remaining: ${mins}m ${secs}s`;
+    }
+  }, 1000);
+});
+
+// 🔹 Block/Unblock controls
+document.getElementById('blockBtn').addEventListener('click', ()=>{
+  const reg = document.getElementById('regInput').value.trim().toLowerCase();
+  if(!reg){ msg.innerText = '⚠️ Enter reg number!'; return; }
+  update(ref(db, 'students/' + reg), { blocked: true }).then(()=>{
+    msg.innerText = `🚫 ${reg} has been BLOCKED!`;
+  });
+});
+
+document.getElementById('unblockBtn').addEventListener('click', ()=>{
+  const reg = document.getElementById('regInput').value.trim().toLowerCase();
+  if(!reg){ msg.innerText = '⚠️ Enter reg number!'; return; }
+  update(ref(db, 'students/' + reg), { blocked: false }).then(()=>{
+    msg.innerText = `✅ ${reg} has been UNBLOCKED!`;
+  });
+});
+
+// 🔹 Real-time Student lists
+onValue(ref(db, 'students'), snapshot => {
+  activeList.innerHTML = '';
+  blockedList.innerHTML = '';
+  snapshot.forEach(child => {
+    const reg = child.key;
+    const data = child.val();
+    const li = document.createElement('li');
+    li.textContent = reg;
+    if (data.blocked) blockedList.appendChild(li);
+    else activeList.appendChild(li);
+  });
+});
+</script>
+</body>
+</html>
+"@
+
+# 🧱 Rubuta sabon dashboard
+$dashboardPath = Join-Path $FolderPath "dashboard.html"
+Set-Content -Path $dashboardPath -Value $dashboardHtml -Encoding UTF8
+Write-Host "✅ dashboard.html updated successfully!"
+
+Write-Host "`n🎉 Update complete for FUD_Test_App_Full!"

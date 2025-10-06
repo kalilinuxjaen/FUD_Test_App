@@ -1,0 +1,86 @@
+﻿<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<title>Submit Complaint - FUD Test Portal</title>
+<link rel='stylesheet' href='style.css'>
+<style>
+form {
+  max-width: 400px;
+  margin: 40px auto;
+  background: #f0f8f5;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #0A5029;
+}
+textarea, input {
+  width: 100%;
+  padding: 10px;
+  margin-top: 8px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  resize: none;
+}
+button {
+  background: #0A5029;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  margin-top: 10px;
+  border-radius: 5px;
+}
+button:hover {
+  background: #148f43;
+}
+</style>
+</head>
+<body>
+<header><h1>Submit Complaint</h1></header>
+
+<main>
+  <form id='complaintForm'>
+    <label>Registration Number</label>
+    <input id='reg' placeholder='e.g. fcp/cit/23/1150' required>
+
+    <label>Complaint / Apology</label>
+    <textarea id='complaintText' rows='5' placeholder='Type your complaint here...' required></textarea>
+
+    <button type='submit'>Send Complaint</button>
+    <p id='msg'></p>
+  </form>
+</main>
+
+<footer>
+  <p>© 2025 Federal University Dutse | Powered by Ahmad Tech</p>
+</footer>
+
+<script type='module'>
+import { db, ref, push, set } from './firebase-config.js';
+
+document.getElementById('complaintForm').addEventListener('submit', e=>{
+  e.preventDefault();
+  const reg = document.getElementById('reg').value.trim();
+  const text = document.getElementById('complaintText').value.trim();
+  const msg = document.getElementById('msg');
+  
+  if(!reg || !text){
+    msg.innerText = '❌ Please fill all fields.';
+    return;
+  }
+
+  const refComp = push(ref(db, 'complaints'));
+  set(refComp, {
+    reg: reg,
+    text: text,
+    date: new Date().toLocaleString()
+  }).then(()=>{
+    msg.innerText = '✅ Complaint submitted successfully.';
+    document.getElementById('complaintForm').reset();
+  }).catch(err=>{
+    msg.innerText = '⚠️ Error: ' + err.message;
+  });
+});
+</script>
+</body>
+</html>

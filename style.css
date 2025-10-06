@@ -1,0 +1,13 @@
+﻿body {margin:0;font-family:'Segoe UI',sans-serif;background:#f6fff9;transition:.3s}
+.dark-mode{background:#101e14;color:#e8e8e8}
+.sidebar{background:#0A5029;color:#fff;width:230px;height:100vh;position:fixed;padding:20px;overflow-y:auto}
+.sidebar a{display:block;color:#fff;text-decoration:none;margin:10px 0}
+.sidebar a:hover{text-decoration:underline}
+.main{margin-left:250px;padding:20px}
+section{margin-bottom:25px;padding:15px;border:1px solid #0A5029;border-radius:10px;background:#f5fdf9;transition:.3s}
+.dark-mode section{background:#1a3221;border-color:#0a7a3f}
+button{background:#0A5029;color:#fff;border:none;padding:8px 12px;border-radius:6px;cursor:pointer}
+button:hover{background:#148f43}
+h1,h2,h3{color:#0A5029}.dark-mode h1,.dark-mode h2,.dark-mode h3{color:#7CFFB2}
+.toggle-dark{position:absolute;top:15px;right:20px;background:#fff;color:#0A5029;border:none;border-radius:8px;padding:5px 12px;cursor:pointer;font-weight:bold}
+.dark-mode .toggle-dark{background:#148f43;color:#fff}

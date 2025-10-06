@@ -1,0 +1,49 @@
+﻿<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='UTF-8'>
+<meta name='viewport' content='width=device-width, initial-scale=1.0'>
+<title>FUD Test - Question Mode</title>
+<link rel='stylesheet' href='style.css'>
+</head>
+<body>
+<header><h1>Student Test Page</h1></header>
+<main>
+  <div id='blockMsg'></div>
+  <div id='testArea' style='display:none'>
+    <h2>Sample Question</h2>
+    <p>1. What is 2 + 2?</p>
+    <button onclick='submitAnswer(4)'>4</button>
+    <button onclick='submitAnswer(5)'>5</button>
+    <p id='result'></p>
+  </div>
+</main>
+<footer><p>© 2025 FUD Test App | Powered by Ahmad Tech</p></footer>
+
+<script type='module'>
+import { db, ref, get, child } from './firebase-config.js';
+
+const reg = localStorage.getItem('studentReg');
+const blockMsg = document.getElementById('blockMsg');
+const testArea = document.getElementById('testArea');
+
+if(!reg){
+  blockMsg.innerText = '⚠️ Please login first!';
+} else {
+  get(child(ref(db), 'students/' + reg)).then(snap=>{
+    if(snap.exists() && snap.val().blocked){
+      blockMsg.innerHTML = '🚫 Access denied! You are blocked.<br><a href="complaint.html">Submit Complaint</a>';
+    } else {
+      blockMsg.style.display = 'none';
+      testArea.style.display = 'block';
+    }
+  });
+}
+
+window.submitAnswer = (ans)=>{
+  document.getElementById('result').innerText = '✅ Answer submitted: ' + ans;
+  setTimeout(()=> alert('Auto-submit complete!'), 1000);
+};
+</script>
+</body>
+</html>
